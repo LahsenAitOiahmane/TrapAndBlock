@@ -582,28 +582,5 @@ sudo ./log_viewer.sh all         # View all logs
 - **rsyslog Documentation**: https://www.rsyslog.com/doc/
 - **VMware Networking**: https://docs.vmware.com/en/VMware-Workstation-Pro/
 
----
 
-## License
-
-This project is for educational purposes only. Use responsibly and only in authorized testing environments.
-
----
-
-## Authors
-
-Created for network security education and penetration testing training.
-
----
-
-## Version History
-
-- **v2.0**: Honeypot/transparent shield implementation with comprehensive logging
-- **v1.0**: Initial firewall configuration
-
----
-
-## Support
-
-For issues or questions, please review the troubleshooting section or consult the script comments for detailed explanations of each configuration step.
 
