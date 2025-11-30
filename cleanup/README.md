@@ -284,9 +284,3 @@ cat /tmp/iptables_backup_*.rules | head -20
 - Backups are timestamped to prevent overwriting
 - All changes are reversible using backup files
 
----
-
-## License
-
-These scripts are for educational purposes only. Use responsibly in authorized testing environments.
-
