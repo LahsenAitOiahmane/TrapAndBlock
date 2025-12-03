@@ -70,6 +70,19 @@ parse_honeypot_logs() {
           "$YELLOW" "$dst_ip" "$RESET" \
           "$BLUE" "$dport" "$RESET" \
           "$GREEN" "$protocol" "$RESET"
+      elif echo "$line" | grep -qE "(FTP_HARD_BAN:|SSH_HARD_BAN:|TELNET_HARD_BAN:)"; then
+        honeypot_count=$((honeypot_count + 1))
+        local timestamp=$(echo "$line" | grep -oP '^\w+\s+\d+\s+[\d:]+' )
+        local prefix=$(echo "$line" | grep -oE "FTP_HARD_BAN:|SSH_HARD_BAN:|TELNET_HARD_BAN:")
+        local src_ip=$(echo "$line" | grep -oP 'SRC=[\d.]+' | cut -d= -f2)
+        local dst_ip=$(echo "$line" | grep -oP 'DST=[\d.]+' | cut -d= -f2)
+        local dport=$(echo "$line" | grep -oP 'DPT=\d+' | cut -d= -f2)
+        printf "%s[%s]%s %s%s%s from %s%s -> %s%s on port %s%s\n" \
+          "$CYAN" "$timestamp" "$RESET" \
+          "$RED" "$prefix" "$RESET" \
+          "$RED" "$src_ip" "$RESET" \
+          "$YELLOW" "$dst_ip" "$RESET" \
+          "$BLUE" "$dport" "$RESET"
       fi
     done < "$KERNEL_LOG"
   fi
@@ -178,11 +191,13 @@ show_realtime_logs() {
   section "REAL-TIME LOG MONITORING"
   info "Press Ctrl+C to stop monitoring."
   if [ -f "$KERNEL_LOG" ]; then
-    tail -f "$KERNEL_LOG" | grep --line-buffered -E "HONEYPOT_ATTACK|SYN_FLOOD|IPTABLES.*DROP" | while IFS= read -r line; do
+    tail -f "$KERNEL_LOG" | grep --line-buffered -E "HONEYPOT_ATTACK|SYN_FLOOD|IPTABLES.*DROP|FTP_HARD_BAN:|SSH_HARD_BAN:|TELNET_HARD_BAN:" | while IFS= read -r line; do
       if echo "$line" | grep -q "HONEYPOT_ATTACK"; then
         printf "%s[HONEYPOT]%s %s\n" "$RED" "$RESET" "$line"
       elif echo "$line" | grep -q "SYN_FLOOD"; then
         printf "%s[SYN_FLOOD]%s %s\n" "$YELLOW" "$RESET" "$line"
+      elif echo "$line" | grep -qE "(FTP_HARD_BAN:|SSH_HARD_BAN:|TELNET_HARD_BAN:)"; then
+        printf "%s[HARD_BAN]%s %s\n" "$RED" "$RESET" "$line"
       else
         printf "%s[DROP]%s %s\n" "$CYAN" "$RESET" "$line"
       fi
