@@ -1,5 +1,5 @@
 #!/bin/bash
-# AutoTableV2 – Hardened Firewall + Honeypot + SSH Hard Ban (60 seconds)
+# AutoTableV2 – Hardened Firewall + Honeypot + Hard Ban (SSH, FTP, Telnet)
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -16,15 +16,11 @@ readonly IPTABLES_BIN=$(command -v iptables)
 
 # ------------------------- COLOR & LOG HELPERS ----------------------
 if command -v tput >/dev/null 2>&1 && [ -n "${TERM:-}" ]; then
-  readonly GREEN="$(tput setaf 2)"
-  readonly YELLOW="$(tput setaf 3)"
-  readonly RED="$(tput setaf 1)"
-  readonly BLUE="$(tput setaf 6)"
+  readonly GREEN="$(tput setaf 2)"; readonly YELLOW="$(tput setaf 3)"
+  readonly RED="$(tput setaf 1)"; readonly BLUE="$(tput setaf 6)"
   readonly RESET="$(tput sgr0)"
 else
-  readonly GREEN=""; readonly YELLOW=""
-  readonly RED=""; readonly BLUE=""
-  readonly RESET=""
+  readonly GREEN=""; readonly YELLOW=""; readonly RED=""; readonly BLUE=""; readonly RESET=""
 fi
 
 section() { printf "\n%s[%s]%s %s\n" "$BLUE" "$(date -u +'%H:%M:%S')" "$RESET" "$1"; logger -t autotablev2 "$1"; }
@@ -106,11 +102,15 @@ base_rules() {
   # Drop invalid early
   "$IPTABLES_BIN" -w -A INPUT -m conntrack --ctstate INVALID -j HONEYPOT_INPUT
 
-  # Anti-spoofing
+  # Anti-spoofing (Strict Whitelist Mode)
   "$IPTABLES_BIN" -w -N CHECK_SPOOFING
-  "$IPTABLES_BIN" -w -A INPUT -i "$NET_IF" -s 0.0.0.0/0 -j CHECK_SPOOFING
+  # Check everything coming in on the interface
+  "$IPTABLES_BIN" -w -A INPUT -i "$NET_IF" -j CHECK_SPOOFING
+  # Allow our network
   "$IPTABLES_BIN" -w -A CHECK_SPOOFING -s "$NETWORK" -j RETURN
-  "$IPTABLES_BIN" -w -A CHECK_SPOOFING -j HONEYPOT_INPUT
+  # Log & Drop everything else as spoofing
+  "$IPTABLES_BIN" -w -A CHECK_SPOOFING -j LOG --log-prefix "SPOOF_ATTEMPT_DROP: " --log-level 4
+  "$IPTABLES_BIN" -w -A CHECK_SPOOFING -j DROP
 }
 
 service_rules() {
@@ -122,46 +122,65 @@ service_rules() {
 
   "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 80 -j ACCEPT
   "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 443 -j ACCEPT
-
-  # Log legacy services
-  for port in 21 23; do
-    "$IPTABLES_BIN" -w -A INPUT -p tcp --dport "$port" -j HONEYPOT_INPUT
-  done
+  
+  # NOTE: FTP (21) and Telnet (23) logging has been moved to advanced_security
+  # to support the active Hard Ban logic.
 
   "$IPTABLES_BIN" -w -A INPUT -p udp --dport 161 -j HONEYPOT_INPUT
 }
 
 advanced_security() {
-  section "Advanced SSH Hard Ban (Prison Mode)"
+  section "Advanced Hard Ban (SSH, FTP, Telnet)"
+  
+  # Define ports to protect: FTP(21), SSH(22), Telnet(23)
+  local PROTECTED_PORTS="21,22,23"
 
   # 1. Already banned → block & refresh timer
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 \
-      -m recent --name SSH_BANNED --update --seconds 60 -j DROP
+  # Using 'ABUSE_BANNED' list shared across all 3 services
+  "$IPTABLES_BIN" -w -A INPUT -p tcp -m multiport --dports "$PROTECTED_PORTS" \
+      -m recent --name ABUSE_BANNED --update --seconds 60 -j DROP
 
   # 2. Track new attempts
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 \
-      -m conntrack --ctstate NEW -m recent --name SSH_COUNT --set
+  "$IPTABLES_BIN" -w -A INPUT -p tcp -m multiport --dports "$PROTECTED_PORTS" \
+      -m conntrack --ctstate NEW -m recent --name ABUSE_COUNT --set
 
-  # 3. If >3 attempts in 60s → ban
+  # 3. If >3 attempts in 60s → Log SPECIFIC service, then Ban
+  # We split the LOG rules to give unique prefixes, but they all check the SAME count list.
+  
+  # FTP Specific Log
+  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 21 \
+      -m conntrack --ctstate NEW \
+      -m recent --name ABUSE_COUNT --rcheck --seconds 60 --hitcount 4 \
+      -j LOG --log-prefix "FTP_HARD_BAN: " --log-level 4
+
+  # SSH Specific Log
   "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 \
       -m conntrack --ctstate NEW \
-      -m recent --name SSH_COUNT --rcheck --seconds 60 --hitcount 4 \
+      -m recent --name ABUSE_COUNT --rcheck --seconds 60 --hitcount 4 \
       -j LOG --log-prefix "SSH_HARD_BAN: " --log-level 4
 
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 \
+  # Telnet Specific Log
+  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 23 \
       -m conntrack --ctstate NEW \
-      -m recent --name SSH_COUNT --rcheck --seconds 60 --hitcount 4 \
-      -m recent --name SSH_BANNED --set -j DROP
+      -m recent --name ABUSE_COUNT --rcheck --seconds 60 --hitcount 4 \
+      -j LOG --log-prefix "TELNET_HARD_BAN: " --log-level 4
 
-  # 4. Allow legitimate SSH only AFTER ban checks
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 -s "$ATTACKER_IP" -j ACCEPT
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 -s "$NETWORK" -j ACCEPT
+  # 4. The Executioner (Set Ban & Drop)
+  # This rule applies to ALL protected ports. If you hit the count on any of them, you get banned.
+  "$IPTABLES_BIN" -w -A INPUT -p tcp -m multiport --dports "$PROTECTED_PORTS" \
+      -m conntrack --ctstate NEW \
+      -m recent --name ABUSE_COUNT --rcheck --seconds 60 --hitcount 4 \
+      -m recent --name ABUSE_BANNED --set -j DROP
 
-  # 5. Others → honeypot
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 -j HONEYPOT_INPUT
+  # 5. Allow legitimate traffic only AFTER ban checks
+  "$IPTABLES_BIN" -w -A INPUT -p tcp -m multiport --dports "$PROTECTED_PORTS" -s "$ATTACKER_IP" -j ACCEPT
+  "$IPTABLES_BIN" -w -A INPUT -p tcp -m multiport --dports "$PROTECTED_PORTS" -s "$NETWORK" -j ACCEPT
 
-  # 6. Block attacker from all *other* services
-  "$IPTABLES_BIN" -w -A INPUT -s "$ATTACKER_IP" ! -p tcp --dport 22 -j HONEYPOT_INPUT
+  # 6. Others → honeypot
+  "$IPTABLES_BIN" -w -A INPUT -p tcp -m multiport --dports "$PROTECTED_PORTS" -j HONEYPOT_INPUT
+
+  # 7. Block attacker from all *other* services
+  "$IPTABLES_BIN" -w -A INPUT -s "$ATTACKER_IP" -p tcp -m multiport ! --dports "$PROTECTED_PORTS" -j HONEYPOT_INPUT
 
   # SYN flood protection
   "$IPTABLES_BIN" -w -N SYN_FLOOD_CHECK
@@ -197,8 +216,7 @@ main() {
   service_rules
   drop_logging
   persist_rules
-  section "DONE – Firewall ACTIVE with Honeypot + Hard Ban (60s)"
+  section "DONE – Firewall ACTIVE with Unified Hard Ban (SSH/FTP/Telnet)"
 }
 
 main "$@"
-
