@@ -205,7 +205,7 @@ sudo ./AutoTableV2_single.sh
 **Key Features**:
 - **Single Interface**: Configured for eth0 (or enp0s3)
 - **Honeypot Effect**: Attacks logged first, then blocked
-- **Rate Limiting**: SSH connections limited to 3/minute from attacker IP
+- **Unified Hard Ban**: FTP/SSH/Telnet banned using iptables `recent` (ABUSE_COUNT/ABUSE_BANNED)
 - **Attack Detection**: Logs SYN floods, brute force, port scans
 - **No Forwarding**: Simplified rules (INPUT chain only)
 

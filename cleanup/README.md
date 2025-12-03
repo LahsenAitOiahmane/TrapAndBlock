@@ -1,5 +1,14 @@
 # Cleanup Scripts - System Restoration
 
+## Hard-Ban Cleanup
+
+- Clears iptables `recent` lists used by unified hard ban:
+  - `/proc/net/xt_recent/ABUSE_COUNT`
+  - `/proc/net/xt_recent/ABUSE_BANNED`
+- Use `cleanup_iptables.sh` to flush chains and clear recent lists
+- Use `cleanup_all.sh` to perform full reset (iptables + services)
+# Cleanup Scripts - System Restoration
+
 ## Overview
 
 This folder contains scripts to completely reset and clean up the penetration testing lab environment. These scripts restore the system to a default state, as if it were freshly installed, by removing all iptables firewall rules and stopping/disabling all vulnerable services.

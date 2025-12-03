@@ -6,12 +6,27 @@ This project demonstrates a comprehensive network security lab environment desig
 
 ### Key Features
 
-- **Honeypot Security Model**: Firewall configured to log attacks first, then block them
-- **Comprehensive Attack Detection**: Detects and logs SYN floods, brute force attempts, port scans, and spoofing attacks
-- **Rate Limiting**: Implements connection rate limiting for SSH and other services
-- **Centralized Logging**: All security events forwarded to a centralized LogServer
-- **Automated Setup Scripts**: Pre-configured scripts for attacker, victim, and firewall setup
 
+### Unified Hard Ban
+
+- Protected ports: `21` (FTP), `22` (SSH), `23` (Telnet)
+- Tracking list `ABUSE_COUNT`: every NEW attempt is `--set`
+- Ban list `ABUSE_BANNED`: `--rcheck --hitcount 4 --seconds 60` then `--update --seconds 60 -j DROP`
+- Logging prefixes on ban: `FTP_HARD_BAN:`, `SSH_HARD_BAN:`, `TELNET_HARD_BAN:`
+- Ordering: ban checks run before any service accepts; honeypot still logs non-SSH service probes and excess SYNs
+
+### Validate Hard Ban
+
+- From attacker, attempt 5 connections within 60s to any protected port
+- Expect a HARD_BAN log prefix in victim `/var/log/syslog` and forwarded logs
+- During ban window (60s), further attempts are dropped with ban logs
+- After 60s, attempts are counted again and may re-ban on threshold
+
+### Cleanup Notes
+
+- Run `cleanup/cleanup_iptables.sh` to flush rules and clear xt_recent lists
+- Recent lists cleared via `/proc/net/xt_recent/ABUSE_COUNT` and `/proc/net/xt_recent/ABUSE_BANNED`
+- Use `cleanup/cleanup_all.sh` for full reset (iptables + services)
 ---
 
 ## Network Architecture & Design
@@ -352,7 +367,7 @@ sudo ./victim_services_setup.sh
 - Creates honeypot chains for attack detection and logging
 - Implements anti-spoofing rules
 - Configures service-specific access rules
-- Implements rate limiting for SSH brute force detection
+- Unified Hard Ban for SSH/FTP/Telnet using iptables `recent` (ABUSE_COUNT/ABUSE_BANNED)
 - Configures SYN flood protection
 - Enables comprehensive logging of all attacks
 - Persists firewall rules across reboots
