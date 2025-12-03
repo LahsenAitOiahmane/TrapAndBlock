@@ -161,16 +161,52 @@ service_rules() { # Define application-layer access policies with honeypot loggi
 
 advanced_security() { # Apply rate-limiting and SYN flood controls with honeypot logging.
   section "Advanced protections" # Announce advanced security stage.
-  # SSH rate limiting: Allow SSH from attacker IP with strict rate limiting to detect brute force.
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 -s "$ATTACKER_IP" -m conntrack --ctstate NEW -m limit --limit 3/min --limit-burst 3 -j ACCEPT # Allow limited SSH from attacker IP (enables brute force detection).
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 -s "$ATTACKER_IP" -m conntrack --ctstate NEW -j HONEYPOT_INPUT # Log SSH brute force attempts from attacker IP exceeding rate limit.
-  # SSH rate limiting: Allow SSH from other network hosts (trusted, no rate limit).
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 -s "$NETWORK" ! -s "$ATTACKER_IP" -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT # Allow SSH from other network hosts.
-  # SSH rate limiting: Block all other SSH attempts.
-  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 -m conntrack --ctstate NEW -j HONEYPOT_INPUT # Log SSH attempts from unauthorized sources.
-  # Block attacker IP for all other services (non-SSH) - honeypot effect.
-  "$IPTABLES_BIN" -w -A INPUT -s "$ATTACKER_IP" ! -p tcp --dport 22 -j HONEYPOT_INPUT # Log all non-SSH traffic from attacker IP (honeypot effect).
-  # SYN flood protection.
+  # Unified hard-ban using iptables 'recent' for FTP(21), SSH(22), Telnet(23)
+  local PROTECTED_PORTS="21,22,23"
+
+  # 1) Already banned → drop and refresh timer
+  "$IPTABLES_BIN" -w -A INPUT -p tcp -m multiport --dports "$PROTECTED_PORTS" \
+    -m recent --name ABUSE_BANNED --update --seconds 60 -j DROP
+
+  # 2) Track all NEW attempts to protected ports
+  "$IPTABLES_BIN" -w -A INPUT -p tcp -m multiport --dports "$PROTECTED_PORTS" \
+    -m conntrack --ctstate NEW -m recent --name ABUSE_COUNT --set
+
+  # 3) Log per-service when threshold exceeded (4 hits in 60s)
+  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 21 \
+    -m conntrack --ctstate NEW \
+    -m recent --name ABUSE_COUNT --rcheck --seconds 60 --hitcount 4 \
+    -j LOG --log-prefix "FTP_HARD_BAN: " --log-level 4
+
+  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 \
+    -m conntrack --ctstate NEW \
+    -m recent --name ABUSE_COUNT --rcheck --seconds 60 --hitcount 4 \
+    -j LOG --log-prefix "SSH_HARD_BAN: " --log-level 4
+
+  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 23 \
+    -m conntrack --ctstate NEW \
+    -m recent --name ABUSE_COUNT --rcheck --seconds 60 --hitcount 4 \
+    -j LOG --log-prefix "TELNET_HARD_BAN: " --log-level 4
+
+  # 4) On threshold → add to ban list and drop
+  "$IPTABLES_BIN" -w -A INPUT -p tcp -m multiport --dports "$PROTECTED_PORTS" \
+    -m conntrack --ctstate NEW \
+    -m recent --name ABUSE_COUNT --rcheck --seconds 60 --hitcount 4 \
+    -m recent --name ABUSE_BANNED --set -j DROP
+
+  # 5) Allow SSH from the known attacker IP after ban checks (observability allowed, abuse gets banned)
+  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 -s "$ATTACKER_IP" -j ACCEPT
+  # Allow other network hosts SSH after ban checks
+  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 22 -s "$NETWORK" ! -s "$ATTACKER_IP" -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+
+  # 6) FTP/Telnet attempts (21,23) → honeypot (no open access), after ban checks
+  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 21 -j HONEYPOT_INPUT
+  "$IPTABLES_BIN" -w -A INPUT -p tcp --dport 23 -j HONEYPOT_INPUT
+
+  # 7) Block attacker IP for all other services (non-SSH) - honeypot effect (preserve behavior)
+  "$IPTABLES_BIN" -w -A INPUT -s "$ATTACKER_IP" ! -p tcp --dport 22 -j HONEYPOT_INPUT
+
+  # 8) SYN flood protection (unchanged)
   "$IPTABLES_BIN" -w -N SYN_FLOOD_CHECK # Create dedicated chain for SYN flood detection.
   "$IPTABLES_BIN" -w -A INPUT -p tcp --syn -j SYN_FLOOD_CHECK # Send all SYN packets through protection chain.
   "$IPTABLES_BIN" -w -A SYN_FLOOD_CHECK -m limit --limit 1/s --limit-burst 4 -j RETURN # Allow limited burst of SYNs (legitimate traffic).
