@@ -67,6 +67,15 @@ flush_all_tables() { # Flush all iptables tables and chains.
       "$IPTABLES_BIN" -w -t "$table" -Z # Zero packet and byte counters.
     fi # End table existence check.
   done # End table iteration.
+  # Clear iptables 'recent' lists used by hard-ban logic if present
+  for recent_list in ABUSE_COUNT ABUSE_BANNED; do
+    local recent_path="/proc/net/xt_recent/${recent_list}"
+    if [ -w "$recent_path" ]; then
+      info "Clearing recent list: ${recent_list}"
+      # Clear entries by writing 'clear' to the file (kernel xt_recent)
+      echo clear > "$recent_path" 2>/dev/null || true
+    fi
+  done
   info "All tables flushed successfully." # Confirm flushing completion.
 }
 
