@@ -1,4 +1,5 @@
-#!/bin/bash # Use bash interpreter for script execution.
+#!/bin/bash 
+# Use bash interpreter for script execution.
 
 # attacker_test.sh – Pre-flight check and configuration script for Kali attacker machine.
 # This script verifies installation, network configuration, and routing setup before launching attacks.

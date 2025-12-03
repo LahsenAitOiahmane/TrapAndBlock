@@ -1,4 +1,5 @@
-#!/bin/bash # Use bash interpreter for script execution.
+#!/bin/bash 
+# Use bash interpreter for script execution.
 
 # log_viewer.sh – Interactive log viewer for iptables and system logs on LinuxServer firewall.
 # This script presents firewall logs in a readable, organized format for security analysis.

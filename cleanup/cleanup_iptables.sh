@@ -1,4 +1,5 @@
-#!/bin/bash # Use bash interpreter for script execution.
+#!/bin/bash 
+# Use bash interpreter for script execution.
 
 # cleanup_iptables.sh – Complete iptables firewall reset and cleanup script.
 # This script removes all iptables rules, chains, and restores firewall to default state (like fresh install).

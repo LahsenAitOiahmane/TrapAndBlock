@@ -1,4 +1,5 @@
-#!/bin/bash # Use bash interpreter for script execution.
+#!/bin/bash 
+# Use bash interpreter for script execution.
 
 # AutoTableV2 – Hardening & firewall tool for the LinuxServer gateway. # Describe tool purpose.
 # Features include dependency checks, interface configuration, firewall structuring, rsyslog tuning, and auditing. # Summarize capabilities.

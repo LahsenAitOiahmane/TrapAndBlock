@@ -1,4 +1,5 @@
-#!/bin/bash # Use bash interpreter for script execution.
+#!/bin/bash 
+# Use bash interpreter for script execution.
 
 # victim_services_setup.sh – Service configuration script for LinuxServer victim machine.
 # This script opens vulnerable services (FTP, SSH, Telnet, HTTP, SNMP) for penetration testing.

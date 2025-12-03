@@ -1,4 +1,5 @@
-#!/bin/bash # Use bash interpreter for script execution.
+#!/bin/bash 
+# Use bash interpreter for script execution.
 
 # cleanup_all.sh – Master cleanup script that resets both iptables and services to default state.
 # This script runs both cleanup_iptables.sh and cleanup_services.sh to completely reset the system.

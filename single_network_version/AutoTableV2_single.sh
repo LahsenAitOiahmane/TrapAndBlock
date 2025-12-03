@@ -1,4 +1,5 @@
-#!/bin/bash # Use bash interpreter for script execution.
+#!/bin/bash 
+# Use bash interpreter for script execution.
 
 # AutoTableV2_single – Simplified firewall tool for single-network lab environment.
 # This version assumes attacker and victim are on the same network segment (192.168.100.0/24).

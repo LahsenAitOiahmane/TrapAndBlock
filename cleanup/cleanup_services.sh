@@ -1,4 +1,5 @@
-#!/bin/bash # Use bash interpreter for script execution.
+#!/bin/bash 
+# Use bash interpreter for script execution.
 
 # cleanup_services.sh – Stop and disable all vulnerable services configured for penetration testing.
 # This script stops services, disables them from starting on boot, and optionally restores original configurations.

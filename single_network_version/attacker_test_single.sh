@@ -1,4 +1,5 @@
-#!/bin/bash # Use bash interpreter for script execution.
+#!/bin/bash 
+# Use bash interpreter for script execution.
 
 # attacker_test_single.sh – Pre-flight check for Kali attacker machine (single network version).
 # This script verifies installation, network configuration for simplified single-network lab.
