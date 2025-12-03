@@ -76,6 +76,20 @@ parse_honeypot_logs() { # Parse and display honeypot attack logs.
           "$YELLOW" "$dst_ip" "$RESET" \
           "$BLUE" "$dport" "$RESET" \
           "$GREEN" "$protocol" "$RESET" # Print formatted attack log.
+      elif echo "$line" | grep -qE "(FTP_HARD_BAN:|SSH_HARD_BAN:|TELNET_HARD_BAN:)"; then # Handle hard-ban events
+        honeypot_count=$((honeypot_count + 1))
+        local timestamp=$(echo "$line" | grep -oP '^\w+\s+\d+\s+[\d:]+' )
+        local prefix=$(echo "$line" | grep -oE "FTP_HARD_BAN:|SSH_HARD_BAN:|TELNET_HARD_BAN:")
+        local src_ip=$(echo "$line" | grep -oP 'SRC=[\d.]+' | cut -d= -f2)
+        local dst_ip=$(echo "$line" | grep -oP 'DST=[\d.]+' | cut -d= -f2)
+        local dport=$(echo "$line" | grep -oP 'DPT=\d+' | cut -d= -f2)
+        printf "%s[%s]%s %s%s%s %sfrom%s %s%s -> %s%s on port %s%s\n" \
+          "$CYAN" "$timestamp" "$RESET" \
+          "$RED" "$prefix" "$RESET" \
+          "$BOLD" "$RESET" \
+          "$RED" "$src_ip" "$RESET" \
+          "$YELLOW" "$dst_ip" "$RESET" \
+          "$BLUE" "$dport" "$RESET"
       fi # End honeypot log check.
     done < "$KERNEL_LOG" # End file reading.
   fi # End kernel log check.
@@ -185,11 +199,13 @@ show_realtime_logs() { # Show real-time log monitoring (optional).
   section "REAL-TIME LOG MONITORING" # Print section header.
   info "Press Ctrl+C to stop monitoring." # Display instruction.
   if [ -f "$KERNEL_LOG" ]; then # Check if kernel log exists.
-    tail -f "$KERNEL_LOG" | grep --line-buffered -E "HONEYPOT_ATTACK|SYN_FLOOD|IPTABLES.*DROP" | while IFS= read -r line; do # Monitor logs in real-time.
+    tail -f "$KERNEL_LOG" | grep --line-buffered -E "HONEYPOT_ATTACK|SYN_FLOOD|IPTABLES.*DROP|FTP_HARD_BAN:|SSH_HARD_BAN:|TELNET_HARD_BAN:" | while IFS= read -r line; do # Monitor logs in real-time.
       if echo "$line" | grep -q "HONEYPOT_ATTACK"; then # Check if honeypot attack.
         printf "%s[HONEYPOT]%s %s\n" "$RED" "$RESET" "$line" # Print honeypot attack.
       elif echo "$line" | grep -q "SYN_FLOOD"; then # Check if SYN flood.
         printf "%s[SYN_FLOOD]%s %s\n" "$YELLOW" "$RESET" "$line" # Print SYN flood.
+      elif echo "$line" | grep -qE "(FTP_HARD_BAN:|SSH_HARD_BAN:|TELNET_HARD_BAN:)"; then # Hard ban events
+        printf "%s[HARD_BAN]%s %s\n" "$RED" "$RESET" "$line"
       else # Handle other drops.
         printf "%s[DROP]%s %s\n" "$CYAN" "$RESET" "$line" # Print drop.
       fi # End log type check.

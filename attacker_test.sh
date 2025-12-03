@@ -181,6 +181,10 @@ print_summary() { # Print test summary and recommendations.
   printf "  2. Ensure network interface is configured correctly\n" # List step 2.
   printf "  3. Test connectivity to target: ping $TARGET_IP\n" # List step 3.
   printf "  4. Begin reconnaissance: nmap -sS $TARGET_IP\n" # List step 4.
+  printf "  5. Validate hard-ban behavior (SSH/FTP/Telnet):\n" # New guidance based on V3 logic.
+  printf "     - Make >4 NEW attempts within 60s to ports 21/22/23\n"
+  printf "     - Expect kernel logs with prefixes: FTP_HARD_BAN:, SSH_HARD_BAN:, TELNET_HARD_BAN:\n"
+  printf "     - Subsequent attempts should DROP for ~60s (ban window)\n"
 }
 
 # ------------------------- MAIN ------------------------------------
