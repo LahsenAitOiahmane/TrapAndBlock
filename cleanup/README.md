@@ -7,7 +7,6 @@
   - `/proc/net/xt_recent/ABUSE_BANNED`
 - Use `cleanup_iptables.sh` to flush chains and clear recent lists
 - Use `cleanup_all.sh` to perform full reset (iptables + services)
-# Cleanup Scripts - System Restoration
 
 ## Overview
 
@@ -27,6 +26,7 @@ This folder contains scripts to completely reset and clean up the penetration te
 **Purpose**: Completely removes all iptables rules and restores firewall to default state.
 
 **What it does**:
+
 - Backs up current iptables rules to `/tmp/iptables_backup_*.rules`
 - Flushes all rules from all tables (filter, nat, mangle, raw, security)
 - Deletes all custom chains
@@ -36,12 +36,14 @@ This folder contains scripts to completely reset and clean up the penetration te
 - Verifies cleanup was successful
 
 **Usage**:
+
 ```bash
 chmod +x cleanup_iptables.sh
 sudo ./cleanup_iptables.sh
 ```
 
-**Result**: 
+**Result**:
+
 - Firewall in default state (all traffic allowed)
 - No firewall rules active
 - Rules will NOT persist after reboot
@@ -53,6 +55,7 @@ sudo ./cleanup_iptables.sh
 **Purpose**: Stops and disables all vulnerable services configured for penetration testing.
 
 **What it does**:
+
 - Stops all vulnerable services (SSH, FTP, Telnet, HTTP, SNMP)
 - Disables services from starting on boot
 - Restores service configurations to secure defaults:
@@ -63,6 +66,7 @@ sudo ./cleanup_iptables.sh
 - Checks if vulnerable ports are still listening
 
 **Services affected**:
+
 - `sshd` (SSH - port 22)
 - `vsftpd` (FTP - port 21)
 - `telnet` / `inetd` / `xinetd` (Telnet - port 23)
@@ -70,12 +74,14 @@ sudo ./cleanup_iptables.sh
 - `snmpd` (SNMP - port 161)
 
 **Usage**:
+
 ```bash
 chmod +x cleanup_services.sh
 sudo ./cleanup_services.sh
 ```
 
 **Result**:
+
 - All vulnerable services stopped
 - Services disabled from boot
 - Configurations restored to secure defaults
@@ -87,18 +93,21 @@ sudo ./cleanup_services.sh
 **Purpose**: Runs both iptables and services cleanup scripts in sequence.
 
 **What it does**:
+
 - Verifies both cleanup scripts exist and are executable
 - Runs `cleanup_iptables.sh` first
 - Runs `cleanup_services.sh` second
 - Provides comprehensive summary of all cleanup actions
 
 **Usage**:
+
 ```bash
 chmod +x cleanup_all.sh
 sudo ./cleanup_all.sh
 ```
 
 **Result**:
+
 - Complete system reset to default state
 - Firewall and services both cleaned
 - System ready for fresh configuration
@@ -107,19 +116,22 @@ sudo ./cleanup_all.sh
 
 ## When to Use
 
-### Use `cleanup_iptables.sh` when:
+### Use `cleanup_iptables.sh` when
+
 - You want to remove all firewall rules
 - Testing different firewall configurations
 - Resetting firewall to default state
 - Troubleshooting firewall issues
 
-### Use `cleanup_services.sh` when:
+### Use `cleanup_services.sh` when
+
 - You want to stop all vulnerable services
 - Removing penetration testing setup
 - Restoring services to secure defaults
 - Preparing system for production use
 
-### Use `cleanup_all.sh` when:
+### Use `cleanup_all.sh` when
+
 - You want complete system reset
 - Starting fresh with lab setup
 - Removing all penetration testing configurations
@@ -132,11 +144,13 @@ sudo ./cleanup_all.sh
 All cleanup scripts create backups before making changes:
 
 ### iptables Backups
+
 - Location: `/tmp/iptables_backup_YYYYMMDD_HHMMSS.rules`
 - Contains: All iptables rules before cleanup
 - Restore: `sudo iptables-restore < /tmp/iptables_backup_*.rules`
 
 ### Service Configuration Backups
+
 - SSH: `/etc/ssh/sshd_config.backup`
 - FTP: `/etc/vsftpd.conf.backup`
 - SNMP: `/etc/snmp/snmpd.conf.backup`
@@ -148,7 +162,9 @@ All cleanup scripts create backups before making changes:
 
 After running cleanup scripts, verify the cleanup:
 
-### Verify iptables:
+### Verify iptables
+
+```bash
 ```bash
 # Check if any rules exist
 sudo iptables -L -n -v
@@ -161,7 +177,9 @@ sudo iptables -P OUTPUT
 # Should show: ACCEPT for all policies
 ```
 
-### Verify services:
+### Verify services
+
+```bash
 ```bash
 # Check service status
 sudo systemctl status sshd
@@ -178,7 +196,9 @@ sudo netstat -tuln | grep -E ':(21|22|23|80|161) '
 
 ## Restoring from Backups
 
-### Restore iptables rules:
+### Restore iptables rules
+
+```bash
 ```bash
 # Find backup file
 ls -la /tmp/iptables_backup_*.rules
@@ -190,7 +210,9 @@ sudo iptables-restore < /tmp/iptables_backup_YYYYMMDD_HHMMSS.rules
 sudo netfilter-persistent save
 ```
 
-### Restore service configurations:
+### Restore service configurations
+
+```bash
 ```bash
 # SSH
 sudo cp /etc/ssh/sshd_config.backup /etc/ssh/sshd_config
@@ -210,24 +232,28 @@ sudo systemctl restart snmpd
 ## Examples
 
 ### Example 1: Reset firewall only
+
 ```bash
 cd cleanup
 sudo ./cleanup_iptables.sh
 ```
 
 ### Example 2: Stop all vulnerable services
+
 ```bash
 cd cleanup
 sudo ./cleanup_services.sh
 ```
 
 ### Example 3: Complete system reset
+
 ```bash
 cd cleanup
 sudo ./cleanup_all.sh
 ```
 
 ### Example 4: Cleanup and verify
+
 ```bash
 cd cleanup
 sudo ./cleanup_all.sh
@@ -246,6 +272,7 @@ sudo systemctl list-units --type=service --state=running | grep -E 'ssh|ftp|apac
 ### Issue: Script fails with "permission denied"
 
 **Solution**: Run with sudo:
+
 ```bash
 sudo ./cleanup_iptables.sh
 ```
@@ -253,6 +280,7 @@ sudo ./cleanup_iptables.sh
 ### Issue: Services still running after cleanup
 
 **Solution**: Force stop services:
+
 ```bash
 sudo systemctl stop sshd vsftpd apache2 snmpd
 sudo systemctl kill sshd vsftpd apache2 snmpd
@@ -261,6 +289,7 @@ sudo systemctl kill sshd vsftpd apache2 snmpd
 ### Issue: Ports still listening
 
 **Solution**: Check what's using the ports:
+
 ```bash
 sudo lsof -i :22  # SSH
 sudo lsof -i :21  # FTP
@@ -270,6 +299,7 @@ sudo lsof -i :80  # HTTP
 ### Issue: Can't restore from backup
 
 **Solution**: Check backup file exists and has content:
+
 ```bash
 ls -la /tmp/iptables_backup_*.rules
 cat /tmp/iptables_backup_*.rules | head -20

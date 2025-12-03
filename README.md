@@ -7,6 +7,7 @@ This project demonstrates a comprehensive network security lab environment desig
 ### Key Features
 
 
+
 ### Unified Hard Ban
 
 - Protected ports: `21` (FTP), `22` (SSH), `23` (Telnet)
@@ -33,7 +34,7 @@ This project demonstrates a comprehensive network security lab environment desig
 
 ### Network Topology
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    External Network                          │
 │                    192.168.100.0/24                          │
@@ -74,23 +75,27 @@ This project demonstrates a comprehensive network security lab environment desig
 ### Network Addressing Plan
 
 #### External Network (192.168.100.0/24)
+
 - **Cloud/Router R1**: 192.168.100.1
 - **Kali Attacker**: 192.168.100.10
 
 #### DMZ / Server Network (10.10.0.0/24)
+
 - **Router R2**: 10.10.0.1
 - **LinuxServer** (Victim/Gateway): 10.10.0.10
-  - Interface 1 (enp0s3): 10.10.0.10/24 (toward R2)
-  - Interface 2 (enp0s8): 10.10.10.1/24 (toward LAN1)
+   - Interface 1 (enp0s3): 10.10.0.10/24 (toward R2)
+   - Interface 2 (enp0s8): 10.10.10.1/24 (toward LAN1)
 - **BSDServer**: 10.10.0.20
 - **LogServer**: 10.10.0.30
 
 #### LAN1 (10.10.10.0/24) - Behind LinuxServer
+
 - **Gateway**: LinuxServer (10.10.10.1)
 - **PC1**: 10.10.10.11
 - **PC2**: 10.10.10.12
 
 #### LAN2 (10.10.20.0/24) - Behind BSDServer
+
 - **Gateway**: BSDServer (10.10.20.1)
 - **PC3**: 10.10.20.11
 - **PC4**: 10.10.20.12
@@ -100,6 +105,7 @@ This project demonstrates a comprehensive network security lab environment desig
 ## Required Machines
 
 ### 1. Kali Linux (Attacker Machine)
+
 - **OS**: Kali Linux (latest)
 - **RAM**: 2GB minimum (4GB recommended)
 - **Disk**: 20GB minimum
@@ -108,22 +114,25 @@ This project demonstrates a comprehensive network security lab environment desig
 - **Purpose**: Penetration testing, attack simulation
 
 ### 2. LinuxServer (Victim/Firewall Machine)
+
 - **OS**: Ubuntu Server 20.04/22.04 LTS
 - **RAM**: 2GB minimum (4GB recommended)
 - **Disk**: 20GB minimum
 - **Network**: 2 NICs
-  - NIC1 (enp0s3): 10.10.0.10/24 (toward R2)
-  - NIC2 (enp0s8): 10.10.10.1/24 (toward LAN1)
+   - NIC1 (enp0s3): 10.10.0.10/24 (toward R2)
+   - NIC2 (enp0s8): 10.10.10.1/24 (toward LAN1)
 - **Purpose**: Firewall gateway, victim server, iptables configuration
 
 ### 3. Router R2 (Optional - Can use Linux router)
+
 - **OS**: Cisco IOS or Linux router
 - **Network**: 2 NICs
-  - NIC1: 192.168.100.1/24 (toward external)
-  - NIC2: 10.10.0.1/24 (toward DMZ)
+   - NIC1: 192.168.100.1/24 (toward external)
+   - NIC2: 10.10.0.1/24 (toward DMZ)
 - **Purpose**: Network routing between external and DMZ
 
 ### 4. LogServer (Optional but Recommended)
+
 - **OS**: Ubuntu Server
 - **RAM**: 1GB minimum
 - **Disk**: 10GB minimum
@@ -132,13 +141,15 @@ This project demonstrates a comprehensive network security lab environment desig
 - **Purpose**: Centralized log collection (rsyslog)
 
 ### 5. BSDServer (Optional)
+
 - **OS**: FreeBSD or OpenBSD
 - **Network**: 2 NICs
-  - NIC1: 10.10.0.20/24 (toward DMZ)
-  - NIC2: 10.10.20.1/24 (toward LAN2)
+   - NIC1: 10.10.0.20/24 (toward DMZ)
+   - NIC2: 10.10.20.1/24 (toward LAN2)
 - **Purpose**: Alternative gateway for LAN2
 
 ### 6. Client Machines (PC1-PC4) - Optional
+
 - **OS**: Any Linux distribution
 - **Purpose**: Test internal network connectivity
 
