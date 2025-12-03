@@ -51,25 +51,25 @@ This project demonstrates a comprehensive network security lab environment desig
 │         │          10.10.0.0/24                             │
 │         │                                                   │
 │  ┌──────▼──────┐                                            │
-│  │ Router R2   │                                            │
-│  │ 10.10.0.1   │                                            │
+│  │  Router R2  │                                            │
+│  │  10.10.0.1  │                                            │
 │  └──────┬──────┘                                            │
 │         │                                                   │
-│  ┌──────┼──────┬──────────────┬──────────────┐              │
-│  │      │      │              │              │              │
-│  │ LinuxServer │  BSDServer   │  LogServer   │              │
-│  │ 10.10.0.10  │  10.10.0.20  │  10.10.0.30  │              │
-│  │ (Gateway)   │  (Gateway)   │  (Collector) │              │
-│  └──────┬──────┘              │              │              │
-│         │                     │              │              │
-│  ┌──────▼──────┐      ┌───────▼──────┐       │              │
-│  │    LAN1     │      │     LAN2     │       │              │
-│  │10.10.10.0/24│      │10.10.20.0/24 │       │              │
-│  │             │      │              │       │              │
-│  │ PC1: .11    │      │ PC3: .11     │       │              │
-│  │ PC2: .12    │      │ PC4: .12     │       │              │
-│  └─────────────┘      └──────────────┘       │              │
-└──────────────────────────────────────────────┘──────────────┘
+│  ┌──────┼──────┬──────┬────────┬──────────────┐             │
+│  │      │      │      │        |              │             │
+│  │ LinuxServer │   BSDServer   │  LogServer   │             │
+│  │  10.10.0.10 │   10.10.0.20  │  10.10.0.30  │             │
+│  │  (Gateway)  │   (Gateway)   │  (Collector) │             │
+│  └──────┬──────┘───────┬───────┘──────────────┘             │                            
+│         │              │                                    │
+│  ┌──────▼──────┐───────▼───────┐                            │
+│  │    LAN1     │    LAN2       │                            │
+│  │10.10.10.0/24│ 10.10.20.0/24 │                            │
+│  │             │               │                            │
+│  │ PC1: .11    │  PC3: .11     │                            │
+│  │ PC2: .12    │  PC4: .12     │                            │
+│  └─────────────┘───────────────┘                            │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Network Addressing Plan
@@ -607,6 +607,7 @@ sudo ./log_viewer.sh all         # View all logs
 - **Kali Linux Tools**: https://www.kali.org/tools/
 - **rsyslog Documentation**: https://www.rsyslog.com/doc/
 - **VMware Networking**: https://docs.vmware.com/en/VMware-Workstation-Pro/
+
 
 
 
