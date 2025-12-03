@@ -95,6 +95,7 @@ print_final_summary() { # Print final cleanup summary.
   printf "  ✓ All iptables chains deleted\n" # List completed action.
   printf "  ✓ Default firewall policies reset\n" # List completed action.
   printf "  ✓ Persistent firewall rules removed\n" # List completed action.
+  printf "  ✓ Hard-ban recent lists cleared (ABUSE_COUNT, ABUSE_BANNED)\n" # Reflect xt_recent cleanup.
   printf "  ✓ All vulnerable services stopped\n" # List completed action.
   printf "  ✓ All services disabled from boot\n" # List completed action.
   printf "  ✓ Service configurations restored\n" # List completed action.
