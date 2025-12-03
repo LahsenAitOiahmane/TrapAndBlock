@@ -85,6 +85,12 @@ restore_ssh_config() { # Restore SSH configuration to secure defaults.
     sed -i 's/^PasswordAuthentication yes/PasswordAuthentication no/' "$sshd_config" 2>/dev/null || true # Disable password auth.
     info "SSH secure defaults applied." # Confirm secure defaults.
   fi # End backup file check.
+  # Optional: Clear weak root password if set during lab setup
+  if command -v passwd >/dev/null 2>&1; then
+    warn "Root password may have been set to a weak value for testing. Consider resetting it now."
+    # Uncomment to force reset interactively:
+    # passwd root
+  fi
 }
 
 restore_ftp_config() { # Restore FTP configuration to secure defaults.

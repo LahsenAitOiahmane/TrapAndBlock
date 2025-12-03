@@ -188,6 +188,8 @@ print_summary() { # Print service setup summary.
   printf "  - Telnet (port 23): Unencrypted remote access\n" # List Telnet configuration.
   printf "  - HTTP (port 80): Apache web server\n" # List HTTP configuration.
   printf "  - SNMP (port 161): Public community string\n" # List SNMP configuration.
+  printf "\nHard-ban detection active (firewall):\n" # Inform about firewall behavior.
+  printf "  - Repeated NEW connection attempts (>3 in 60s) to 21/22/23 are logged (FTP_HARD_BAN:, SSH_HARD_BAN:, TELNET_HARD_BAN:) and banned for ~60s.\n"
   warn "WARNING: These services are configured with vulnerable settings for testing purposes only!" # Warn about vulnerable settings.
   warn "Do NOT use these settings in production environments!" # Emphasize production warning.
 }
